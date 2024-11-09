@@ -1,7 +1,16 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EveImSync", "src\EveImSync.csproj", "{1DA51BEB-7870-485F-80F4-A716279AA32F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Evernote2Onenote", "evernote2onenote\src\Evernote2Onenote.csproj", "{9861086C-B2C6-4E1F-BF80-CF6D03DC529C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{DC6DD6BD-2ED1-4BF1-8701-4121F086335A}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,10 +19,18 @@ Global
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{1DA51BEB-7870-485F-80F4-A716279AA32F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DA51BEB-7870-485F-80F4-A716279AA32F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1DA51BEB-7870-485F-80F4-A716279AA32F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1DA51BEB-7870-485F-80F4-A716279AA32F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9861086C-B2C6-4E1F-BF80-CF6D03DC529C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9861086C-B2C6-4E1F-BF80-CF6D03DC529C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9861086C-B2C6-4E1F-BF80-CF6D03DC529C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9861086C-B2C6-4E1F-BF80-CF6D03DC529C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {29026C59-921A-4DE6-AE30-FDCD411A3D9D}
 	EndGlobalSection
 EndGlobal
