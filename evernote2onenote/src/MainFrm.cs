@@ -22,6 +22,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -57,6 +58,7 @@ namespace Evernote2Onenote
         private bool _useUnfiledSection;
         private string _enexfile = "";
         string _newnbId = "";
+        //this didn't help: string newnbId = "";
 
         private readonly string _cmdNoteBook = "";
         private DateTime _cmdDate = new DateTime(0);
@@ -235,7 +237,8 @@ namespace Evernote2Onenote
                 var nbName = _enNotebookName.Substring(0, Math.Min(30, _enNotebookName.Length)); // only allow 30 chars for the notebook name
                 nbName = nbName.Replace(".", "");
                 //_evernoteNotebookPath += "\\" + nbName;
-                _evernoteNotebookPath += String.IsNullOrEmpty(folderName)? "\\Evernote2OneNote" : $"\\{folderName}";
+                _evernoteNotebookPath += "\\Evernote2OneNote";
+                //_evernoteNotebookPath += String.IsNullOrEmpty(folderName)? "\\Evernote2OneNote" : $"\\{folderName}";
                 //this created a Section Group with the name of the import file
                 _onApp.OpenHierarchy(_evernoteNotebookPath, "", out var newnbId, OneNote.CreateFileType.cftNotebook);
 
@@ -245,6 +248,10 @@ namespace Evernote2Onenote
 
                 //this ALSO created a Section Group with the name of the import file
                 //_onApp.OpenHierarchy(_evernoteNotebookPath, "", out var newnbId, OneNote.CreateFileType.cftFolder);
+                if (!String.IsNullOrEmpty(folderName))
+                {
+                    _onApp.OpenHierarchy($"{_evernoteNotebookPath}\\{folderName}", "", out newnbId, OneNote.CreateFileType.cftFolder);
+                }
 
                 _onApp.GetHierarchy(newnbId, OneNote.HierarchyScope.hsPages, out _);
 
@@ -281,14 +288,16 @@ namespace Evernote2Onenote
             if (btnENEXImport.Text == "Import ENEX File")
             {
                 btnENEXImport.Text = "Cancel";
-                syncDelegate = ImportNotesToOnenote;
-                if (async)
-                {
-                    syncDelegate.BeginInvoke(null, null);
-                } else
-                {
-                    syncDelegate.Invoke();
-                }
+                //syncDelegate = ImportNotesToOnenote();
+                //if (async)
+                //{
+                //    syncDelegate.BeginInvoke(null, null);
+                //} else
+                //{
+                //    syncDelegate.Invoke();
+                //}
+                ImportNotesToOnenote(folderName);
+                this.Update();
             }
             else
             {
@@ -296,7 +305,7 @@ namespace Evernote2Onenote
             }
         }
 
-        private void ImportNotesToOnenote()
+        private void ImportNotesToOnenote(string path)
         {
             _syncStep = SyncStep.Start;
 
@@ -325,12 +334,12 @@ namespace Evernote2Onenote
                 if (_enexfile != string.Empty)
                 {
                     SetInfo("Parsing notes from Evernote", "", 0, 0);
-                    notesEvernote = ParseNotes(_enexfile).OrderBy(o=>o.Title).ToList();
+                    notesEvernote = ParseNotes(_enexfile).OrderBy(o => o.Title).ToList();
                 }
                 if (_enexfile != string.Empty)
                 {
                     SetInfo("importing notes to Onenote", "", 0, 0);
-                    ImportNotesToOnenote(notesEvernote, _enexfile);
+                    ImportNotesToOnenote(notesEvernote, _enexfile, path);
                 }
             }
 
@@ -464,7 +473,7 @@ namespace Evernote2Onenote
             return tempfilepathDir;
         }
 
-        private void ImportNotesToOnenote(List<Note> notesEvernote, string exportFile)
+        private void ImportNotesToOnenote(List<Note> notesEvernote, string exportFile, string path)
         {
             var fileName = (new FileInfo(exportFile)).Name.Split('.').FirstOrDefault();
             _syncStep = SyncStep.CalculateWhatToDo;
@@ -697,14 +706,14 @@ namespace Evernote2Onenote
                                 {
                                     foreach (var tag in note.Tags)
                                     {
-                                        var sectionId = GetSection(tag);
+                                        var sectionId = GetSection(tag, path);
                                         try
                                         {
                                             _onApp.CreateNewPage(sectionId, out pageId, OneNote.NewPageStyle.npsBlankPageWithTitle);
                                         }
                                         catch (Exception)
                                         {
-                                            sectionId = _useUnfiledSection ? _newnbId : GetSection(fileName); //GetSection("not specified");
+                                            sectionId = _useUnfiledSection ? _newnbId : GetSection(fileName, path); //GetSection("not specified");
                                             _onApp.CreateNewPage(sectionId, out pageId, OneNote.NewPageStyle.npsBlankPageWithTitle);
                                         }
                                         //_onApp.GetPageContent(pageId, out _);
@@ -720,7 +729,8 @@ namespace Evernote2Onenote
                                 }
                                 else
                                 {
-                                    var sectionId = _useUnfiledSection ? _newnbId : GetSection(fileName); //GetSection("not specified");
+                                    var sectionId = _useUnfiledSection ? _newnbId : GetSection(fileName, path); //GetSection("not specified");
+                                    //var sectionId = _useUnfiledSection ? _newnbId : !String.IsNullOrEmpty(newnbId)? newnbId : GetSection(fileName); //GetSection("not specified");
                                     _onApp.CreateNewPage(sectionId, out pageId, OneNote.NewPageStyle.npsBlankPageWithTitle);
                                     //string pages = string.Empty;
                                     //_onApp.GetHierarchy(sectionId, OneNote.HierarchyScope.hsPages, out pages);
@@ -822,7 +832,7 @@ namespace Evernote2Onenote
         {
             System.Diagnostics.Process.Start("https://tools.stefankueng.com/Evernote2Onenote.html");
         }
-        private string GetSection(string sectionName)
+        private string GetSection(string sectionName, string path)
         {
             var newnbId = "";
             try
@@ -846,7 +856,10 @@ namespace Evernote2Onenote
 
                 _onApp.GetHierarchy("", OneNote.HierarchyScope.hsNotebooks, out var xmlHierarchy);
 
-                _onApp.OpenHierarchy(_evernoteNotebookPath + "\\" + sectionName + ".one", "", out newnbId, OneNote.CreateFileType.cftSection);
+                //2nd param must be ""? So we need to add to the path
+                //_onApp.OpenHierarchy(_evernoteNotebookPath + "\\" + sectionName + ".one", "", out newnbId, OneNote.CreateFileType.cftSection);
+                _onApp.OpenHierarchy(Path.Combine(Path.Combine(_evernoteNotebookPath, path.Replace("\\","")), sectionName + ".one"), "", out newnbId, OneNote.CreateFileType.cftSection);
+                //_onApp.OpenHierarchy(_evernoteNotebookPath, newnbId, out _newnbId, OneNote.CreateFileType.cftSection);
                 _onApp.GetHierarchy(newnbId, OneNote.HierarchyScope.hsSections, out _);
 
                 // Load and process the hierarchy
@@ -855,8 +868,8 @@ namespace Evernote2Onenote
                 var hierarchy = new StringBuilder(sectionName);
                 AppendHierarchy(docHierarchy.DocumentElement, hierarchy, 0);
             }
-            catch (Exception /*ex*/)
-            {
+            catch (Exception ex)
+            {//this should happen
                 //MessageBox.Show(string.Format("Exception creating section \"{0}\":\n{1}", sectionName, ex.ToString()));
             }
             return newnbId;
@@ -946,27 +959,39 @@ namespace Evernote2Onenote
             }
 
             var openFolder = new FolderBrowserDialog();
-            openFolder.SelectedPath = @"D:\Software\Evernote-OneNote\output_dir";
+            if (Directory.Exists(@"D:\Software\Evernote-OneNote\output_dir"))
+            {
+                openFolder.SelectedPath = @"D:\Software\Evernote-OneNote\output_dir";
+            }
 
 
             // Show the Dialog.
             var buttonText = $"{btnENEXImport.Text}";
             if (openFolder.ShowDialog() == DialogResult.OK)
             {
-                foreach (string file in Directory.GetFiles(openFolder.SelectedPath, "*.enex", SearchOption.AllDirectories))
+                btnENEXImport.Text = buttonText;
+                this.Update();
+                ProcessFolder(openFolder.SelectedPath, openFolder.SelectedPath);
+            }
+        }
+        private void ProcessFolder(string baseFolder, string folder)
+        {
+            foreach (string path in Directory.GetDirectories(folder))
+            {
+                ProcessFolder(baseFolder, path);
+            }
+
+            foreach (string file in Directory.GetFiles(folder, "*.enex", SearchOption.TopDirectoryOnly))
+            {
+                if (!_cancelled)
                 {
-                    if (!_cancelled)
-                    {
-                        _enexfile = file;
-                        btnENEXImport.Text = buttonText;
-                        var fi = new FileInfo(file);
-                        infoText1.Text = fi.Name;
-                        Console.WriteLine(infoText1.Text);
-                        this.Update();
-                        StartSync(false, fi.DirectoryName.Replace(openFolder.SelectedPath, "").Trim());
-                        //_onApp.CloseNotebook();
-                        this.Update();
-                    }
+                    _enexfile = file;
+                    var fi = new FileInfo(file);
+                    infoText1.Text = fi.Name;
+                    Console.WriteLine(infoText1.Text);
+                    this.Update();
+                    StartSync(false, fi.DirectoryName.Replace(baseFolder, "").Trim());
+                    this.Update();
                 }
             }
         }
