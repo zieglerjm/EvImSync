@@ -251,6 +251,9 @@ namespace Evernote2Onenote
                 if (!String.IsNullOrEmpty(folderName))
                 {
                     _onApp.OpenHierarchy($"{_evernoteNotebookPath}\\{folderName}", "", out newnbId, OneNote.CreateFileType.cftFolder);
+                } else
+                {
+                    _onApp.OpenHierarchy($"{_evernoteNotebookPath}\\_Base", "", out newnbId, OneNote.CreateFileType.cftFolder);
                 }
 
                 _onApp.GetHierarchy(newnbId, OneNote.HierarchyScope.hsPages, out _);
@@ -858,7 +861,13 @@ namespace Evernote2Onenote
 
                 //2nd param must be ""? So we need to add to the path
                 //_onApp.OpenHierarchy(_evernoteNotebookPath + "\\" + sectionName + ".one", "", out newnbId, OneNote.CreateFileType.cftSection);
-                _onApp.OpenHierarchy(Path.Combine(Path.Combine(_evernoteNotebookPath, path.Replace("\\","")), sectionName + ".one"), "", out newnbId, OneNote.CreateFileType.cftSection);
+                if (!String.IsNullOrEmpty(path))
+                {
+                    _onApp.OpenHierarchy(Path.Combine(Path.Combine(_evernoteNotebookPath, path.Replace("\\", "")), sectionName + ".one"), "", out newnbId, OneNote.CreateFileType.cftSection);
+                } else
+                {
+                    _onApp.OpenHierarchy(Path.Combine(_evernoteNotebookPath, sectionName + ".one"), "", out newnbId, OneNote.CreateFileType.cftSection);
+                }
                 //_onApp.OpenHierarchy(_evernoteNotebookPath, newnbId, out _newnbId, OneNote.CreateFileType.cftSection);
                 _onApp.GetHierarchy(newnbId, OneNote.HierarchyScope.hsSections, out _);
 
